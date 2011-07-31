@@ -4,9 +4,14 @@ class SqlTemplate < ActiveRecord::Base
   validates :format,  :inclusion => Mime::SET.symbols.map(&:to_s)
   validates :locale,  :inclusion => I18n.available_locales.map(&:to_s)
   validates :handler, :inclusion => ActionView::Template::Handlers.extensions.map(&:to_s)
+  
+  after_save do
+    SqlTemplate::Resolver.instance.clear_cache
+  end  
 
   class Resolver < ActionView::Resolver
-    protected
+    require "singleton"
+    include Singleton
 
     def find_templates(name, prefix, partial, details)
       conditions = {
